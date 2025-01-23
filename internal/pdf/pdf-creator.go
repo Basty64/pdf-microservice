@@ -20,28 +20,25 @@ func GeneratePDF(data RequestData) ([]byte, error) {
 
 	//Load fonts
 	pdf.AddUTF8Font("Roboto-Regular", "", "./assets/Roboto-Regular.ttf")
-	pdf.AddUTF8Font("Roboto-Bold", "B", "./assets/Roboto-Bold.ttf")
+	pdf.AddUTF8Font("Roboto-Bold", "", "./assets/Roboto-Bold.ttf")
 
 	// Set initial Y
 	currentY := 7.0
 
-	// Header information
+	// Header text
 	pdf.SetFont("Roboto-Bold", "", 13)
 	pdf.SetTextColor(0, 0, 0)
-
-	// Header text
-	pdf.SetTextColor(0, 0, 0)
-	headerText := fmt.Sprintf("%s  %s TRIP %s", data.TripsStart, data.TripsEnd, strings.ToUpper(data.Location))
+	headerText := fmt.Sprintf("%s    %s         %s", data.TripsStart, data.TripsEnd, strings.ToUpper(data.Location))
 	pdf.SetXY(10, currentY)
 	pdf.Cell(0, 6, headerText)
-	currentY += 8
+	pdf.SetXY(65, currentY+0.3)
+	pdf.SetFont("Roboto-Regular", "", 10)
+	pdf.CellFormat(0, 6, "TRIP", "", 0, "L", false, 0, "")
+	currentY += 14
 
 	// Triangle
 	pdf.SetFillColor(0, 0, 0)
-	pdf.Polygon([]fpdf.PointType{{X: 10, Y: currentY - 2}, {X: 13, Y: currentY + 1}, {X: 10, Y: currentY + 4}}, "F")
-
-	// Header line
-	pdf.Line(10, 14, 200, 14)
+	pdf.Polygon([]fpdf.PointType{{X: 37, Y: 8}, {X: 39, Y: 9.5}, {X: 37, Y: 11}}, "F")
 
 	// QR Code
 	qrCodeBytes, err := generateQRCode("https://github.com/go-pdf/fpdf")
@@ -53,64 +50,75 @@ func GeneratePDF(data RequestData) ([]byte, error) {
 
 	pdf.RegisterImageOptionsReader("qr-code", opt, rdr)
 
-	pdf.Image("qr-code", 170, 15, 35, 35, false, "", 0, "")
+	pdf.Image("qr-code", 170, 12, 35, 35, false, "", 0, "")
+
+	// Header line
+	pdf.Line(10, 13, 200, 13)
 
 	// Prepared for
-	pdf.SetFont("Roboto-Regular", "", 9)
+	pdf.SetFont("Roboto-Regular", "", 11)
 	pdf.SetXY(10, currentY)
 	pdf.Cell(0, 4, "PREPARED FOR")
-	currentY += 5
+	currentY += 4.5
 
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 5, data.PreparedFor)
-	currentY += 6
+	pdf.Cell(0, 4, data.PreparedFor)
+	currentY += 4.5
 
 	// Reservation code
-	pdf.SetFont("Roboto-Regular", "", 10)
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 4, fmt.Sprintf("RESERVATION CODE %s", data.ReservationCode))
-	currentY += 5
+	pdf.Cell(0, 4, fmt.Sprintf("RESERVATION CODE     %s", data.ReservationCode))
+	currentY += 4.5
 
 	// Partial payment
 	pdf.SetXY(10, currentY)
 	pdf.Cell(0, 4, data.PartialPrepayment)
-	currentY += 5
+	currentY += 4.5
 
 	// Final price
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 5, fmt.Sprintf("FINAL PRICE: %s (taxes included)", data.FinalPrice))
-	currentY += 10
+	pdf.Cell(0, 4, fmt.Sprintf("FINAL PRICE: %s (taxes included)", data.FinalPrice))
+	currentY += 12
 
 	// Flights data
 	for _, flight := range data.Flights {
 
-		// Flight grey background
-		pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
-		pdf.Rect(10, currentY-5, 190-10, 45, "F")
+		// 2nd Line
+		pdf.Line(10, currentY, 200, currentY)
 
 		// DEPARTURE
 		pdf.SetTextColor(0, 0, 0)
 		pdf.SetXY(10, currentY)
 		pdf.SetFillColor(0, 0, 0)
-		pdf.Polygon([]fpdf.PointType{{X: 10, Y: currentY + 1}, {X: 13, Y: currentY + 4}, {X: 10, Y: currentY + 7}}, "F")
-		pdf.Cell(0, 5, " DEPARTURE: "+strings.ToUpper(flight.Departure)+" "+flight.DepartureTime+" Please verify flight times prior to departure")
-		currentY += 7
+		pdf.Polygon([]fpdf.PointType{{X: 10, Y: currentY + 0.5}, {X: 12, Y: currentY + 2}, {X: 10, Y: currentY + 3.5}}, "F")
+		pdf.Cell(0, 5, "  DEPARTURE: "+strings.ToUpper(flight.Departure)+" "+flight.DepartureTime+" Please verify flight times prior to departure")
+		currentY += 10
 
-		// Flight info
-		pdf.SetXY(10, currentY)
+		// Flight grey background
+		pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
+		pdf.Rect(10, currentY+5, 50, 25, "F")
+
+		// Flight
+		pdf.SetXY(15, currentY+0.5)
 		pdf.Cell(30, 4, "FLIGHT")
-		pdf.SetX(100)
-		pdf.Cell(40, 4, flight.Departure)
-		pdf.SetX(150)
-		pdf.Cell(30, 4, flight.Arrival)
-		pdf.SetX(180)
+		pdf.SetX(60)
+
+		// Departure
+		pdf.Cell(0, 4, flight.Departure)
+		pdf.SetX(110)
+
+		// Arrival
+		pdf.Cell(0, 4, flight.Arrival)
+		pdf.SetX(160)
 		pdf.Cell(0, 4, "Aircraft:")
 		currentY += 5
 
+		// Flight number
 		pdf.SetFont("Roboto-Bold", "", 10)
-		pdf.SetXY(10, currentY)
+		pdf.SetXY(15, currentY)
 		pdf.Cell(30, 4, flight.FlightNumber)
 
+		// Aircraft number
 		pdf.SetFont("Roboto-Regular", "", 10)
 		pdf.SetX(100)
 		pdf.SetX(150)
@@ -118,17 +126,19 @@ func GeneratePDF(data RequestData) ([]byte, error) {
 		pdf.Cell(0, 4, flight.Aircraft)
 		currentY += 5
 
-		pdf.SetXY(10, currentY)
+		//Departing At
+		pdf.SetFont("Roboto-Regular", "", 8)
+		pdf.SetXY(15, currentY)
 		pdf.Cell(30, 4, fmt.Sprintf("Airline: %s", flight.Airline))
-		pdf.SetX(100)
+		pdf.SetX(60)
 		pdf.Cell(40, 4, "Departing At:")
-		pdf.SetX(150)
+		pdf.SetX(110)
 		pdf.Cell(30, 4, "Arriving At:")
-		pdf.SetX(180)
+		pdf.SetX(160)
 		pdf.Cell(0, 4, "Distance (in Miles):")
 		currentY += 4
 
-		pdf.SetXY(10, currentY)
+		pdf.SetXY(15, currentY)
 		pdf.Cell(30, 4, fmt.Sprintf("Class: %s", flight.Class))
 		pdf.SetX(100)
 		pdf.Cell(40, 4, flight.DepartureTime)
@@ -138,7 +148,7 @@ func GeneratePDF(data RequestData) ([]byte, error) {
 		pdf.Cell(0, 4, flight.Distance)
 		currentY += 4
 
-		pdf.SetXY(10, currentY)
+		pdf.SetXY(15, currentY)
 		pdf.Cell(30, 4, fmt.Sprintf("Status: %s", flight.Status))
 		pdf.SetX(180)
 		pdf.Cell(0, 4, fmt.Sprintf("Stop(s):"))
@@ -201,7 +211,7 @@ func GeneratePDF(data RequestData) ([]byte, error) {
 }
 
 func generateQRCode(data string) ([]byte, error) {
-	qrCode, err := qrcode.Encode(data, qrcode.Medium, 256)
+	qrCode, err := qrcode.Encode(data, qrcode.Highest, 256)
 	if err != nil {
 		return nil, err
 	}
