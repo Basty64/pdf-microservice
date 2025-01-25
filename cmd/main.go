@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"pdf-microservice/internal/models"
 	"pdf-microservice/internal/pdf"
 	"time"
 )
@@ -40,7 +41,7 @@ func main() {
 
 func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 
-	var requestData pdf.RequestData
+	var requestData models.RequestData
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return

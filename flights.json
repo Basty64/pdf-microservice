@@ -8,6 +8,7 @@
       "final_price": "RUB 94,640.00",
       "flights": [
           {
+            "date": "12 November 2023",
             "flight_number": "JU 659",
             "airline": "Air Serbia",
             "class": "ECONOMY",
@@ -24,6 +25,7 @@
             "booking": "CONFIRMED"
           },
           {
+            "date": "12 November 2023",
             "flight_number": "JU 364",
             "airline": "Air Serbia",
             "class": "ECONOMY",
@@ -40,6 +42,7 @@
             "booking": "CONFIRMED"
           },
           {
+            "date": "12 November 2023",
             "flight_number": "JU 361",
             "airline": "Air Serbia",
             "class": "ECONOMY",
@@ -56,6 +59,7 @@
             "booking": "CONFIRMED"
           },
           {
+            "date": "12 November 2023",
             "flight_number": "JU 652",
             "airline": "Air Serbia",
             "class": "ECONOMY",
