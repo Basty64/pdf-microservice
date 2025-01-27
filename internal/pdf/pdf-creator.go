@@ -12,17 +12,18 @@ import (
 )
 
 const (
-	verifyFlights = "Please verify flight times prior to departure"
-	departure     = "DEPARTURE: "
-	departingAt   = "Departing At:"
-	arrivingAt    = "Arriving At:"
-	aircraft      = "Aircraft:"
-	distance      = "Distance (in Miles):"
-	stops         = "Stop(s):"
-	meals         = "Meals:"
-	passengerName = "Passenger Name:"
-	seats         = "Seats:"
-	booking       = "Booking:"
+	verifyFlights          = "Please verify flight times prior to departure"
+	departure              = "DEPARTURE: "
+	departingAt            = "Departing At:"
+	arrivingAt             = "Arriving At:"
+	aircraft               = "Aircraft:"
+	distance               = "Distance (in Miles):"
+	stops                  = "Stop(s):"
+	meals                  = "Meals:"
+	passengerName          = "Passenger Name:"
+	seats                  = "Seats:"
+	booking                = "Booking:"
+	termsAndConditionsLOGO = "TERMS AND CONDITIONS\n\n"
 )
 
 func GeneratePDF(data models.RequestData) ([]byte, error) {
@@ -134,7 +135,7 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 
 		// Flight grey background
 		pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
-		pdf.Rect(10, 56.5, 50, 40, "F")
+		pdf.Rect(10, currentY+1, 50, 40, "F")
 
 		// Table top-line
 		currentY += 1 //56.5
@@ -193,7 +194,7 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 		// Start airport-code
 		pdf.SetFont("Roboto-Regular", "", 11)
 		currentX = 64
-		currentY -= 28.5 //57.5
+		currentY -= 27.5 //58.5
 		startGeo := strings.Split(flight.Departure, " ")
 		airportCode := startGeo[0]
 		pdf.SetXY(currentX, currentY)
@@ -205,6 +206,12 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 		airportCode = finishGeo[0]
 		pdf.SetXY(currentX, currentY)
 		pdf.Cell(0, 4, airportCode)
+
+		// Triangle
+		currentX = 108
+		pdf.SetFillColor(0, 0, 0)
+		pdf.SetXY(currentX, currentY)
+		pdf.Polygon([]fpdf.PointType{{X: currentX, Y: currentY}, {X: currentX + 2, Y: currentY + 1.5}, {X: currentX, Y: currentY + 3}}, "F")
 
 		// Start airport city and country
 		currentX = 64
@@ -310,9 +317,17 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 		//---------------------------------------------
 
 		// BOTTOM TABLE
+		// Grey background
+		pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
+		pdf.Rect(10, currentY+12.5, 190, 4.5, "F")
+
+		// Dotted lines
+		drawDashedRectLine(pdf, 99, currentY+13, 99, currentY+21, rectSize, spaceLen)
+		drawDashedRectLine(pdf, 154, currentY+13, 154, currentY+21, rectSize, spaceLen)
+
 		// Passenger name
 		currentX = 10
-		currentY += 13 //100
+		currentY += 12 //100
 		pdf.SetXY(currentX, currentY)
 		pdf.Cell(0, 5, passengerName)
 
@@ -335,28 +350,39 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 		pdf.Cell(0, 5, flight.Seats)
 
 		//	Booking
-		currentX = 160
+		currentX = 155
 		currentY -= 4 // 100
 		pdf.SetXY(currentX, currentY)
 		pdf.Cell(0, 5, booking)
 
 		//	Booking Data
-		currentX = 160
+		currentX = 155
 		currentY += 4 // 104
 		pdf.SetXY(currentX, currentY)
 		pdf.Cell(0, 5, flight.Booking)
 
-		currentY += 100
+		currentY += 8
 	}
+	//----------------------------------
 
 	pdf.Line(10, 260, 190, 260)
 
 	// Terms and conditions
-	pdf.SetFont("Roboto-Regular", "", 8)
-	pdf.SetY(270)
-	pdf.SetX(10)
-	termsAndConditions := "TERMS AND CONDITIONS\n\n" +
-		"If air carriage is provided for hereon, this document must be exchanged for a ticket and at such time prior to departure as may be required\n" +
+	currentX = 10.0
+	currentY += 5.0
+
+	// Выводим заголовок жирным шрифтом
+	pdf.SetFont("Roboto-Bold", "", 12)
+	pdf.SetXY(currentX, currentY)
+	pdf.Cell(0, 5, termsAndConditionsLOGO)
+
+	// Выводим основной текст обычным шрифтом
+	pdf.SetFont("Roboto-Regular", "", 9)
+	currentY += 5.0 // Сдвигаем Y на высоту заголовка
+	pdf.SetXY(currentX, currentY)
+
+	// Вывод многострочного текста, обернув в MultiCell
+	termsAndConditions := "If air carriage is provided for hereon, this document must be exchanged for a ticket and at such time prior to departure as may be required\n" +
 		"by the rules and regulations of the carrier to whom the document is directed\n\n" +
 		"If this document is issued in respect to baggage, the passenger must also have a passenger ticket and bag- baggage check, since this\n" +
 		"document is not the baggage check described by Article 4 of The Hague Protocol or The Warsaw Convention as amended by the Hague\n" +
@@ -376,6 +402,10 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 		"The acceptance of this document by the person named on the face hereof, or by the person purchasing this document on behalf of such\n" +
 		"named person, shall be deemed to be consent to and acceptance by such person or persons of these conditions."
 
+	currentX = 10.0
+	currentY += 3.0
+	pdf.SetXY(currentX, currentY)
+	// Выводим многострочный текст с использованием MultiCell, устанавливаем ширину 0, т.е. на всю строку
 	pdf.MultiCell(0, 3, termsAndConditions, "", "", false)
 
 	var buf bytes.Buffer
