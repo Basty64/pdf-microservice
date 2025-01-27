@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
 
-  delivery-service:
+  pdf-microservice:
     ports:
       - "8080:8080"
     build:
