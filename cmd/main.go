@@ -42,7 +42,7 @@ func main() {
 
 func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 
-	var requestData models.RequestDataNew
+	var requestData []models.RequestDataNew
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
@@ -55,7 +55,7 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}(r.Body)
 
-	pdfBytes, err := pdf.GeneratePDF(requestData)
+	pdfBytes, err := pdf.GeneratePDF(requestData[0])
 	if err != nil {
 		log.Printf("Error generating PDF: %v", err)
 		http.Error(w, "Failed to generate PDF", http.StatusInternalServerError)
@@ -87,19 +87,21 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Successfully generated and saved PDF locally: %s", filename)
 	return
 
+	//ctx := context.Background()
+	//
 	//s3Url, err := s3.UploadToS3(ctx, bucketName, filename, pdfBytes)
 	//if err != nil {
 	//	log.Printf("Failed to upload to S3: %v", err)
 	//	http.Error(w, "Failed to upload to S3", http.StatusInternalServerError)
 	//	return
 	//}
-
+	//
 	//w.Header().Set("Content-Type", "application/json")
 	//w.WriteHeader(http.StatusOK)
 	////response := map[string]string{"s3_url": s3Url}
 	//
 	//response := "success"
-	//
+
 	//if err := json.NewEncoder(w).Encode(response); err != nil {
 	//	log.Printf("Failed to encode json response: %v", err)
 	//	http.Error(w, "Failed to encode json response", http.StatusInternalServerError)

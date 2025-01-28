@@ -138,6 +138,12 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 	for _, itinerary := range data.Ticket.Itineraries {
 		for _, segment := range itinerary.Segments {
 
+			if currentY+70 > 297 {
+				pdf.AddPage()
+				currentX = 10
+				currentY = 7
+			}
+
 			// Parsing timestamps
 			flightBackDate, err = time.Parse(time.RFC3339, segment.DepartureTime)
 			if err != nil {
@@ -159,7 +165,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.Line(10, currentY, 200, currentY)
 
 			// DEPARTURE TEXT-LINE
-			depatureDate := fmt.Sprintf(strings.ToUpper(flightBackDate.Format("02 January 2006")))
+			depatureDate := fmt.Sprintf(strings.ToUpper(flightBackDate.Format("Monday 02 January 2006")))
 			pdf.SetTextColor(0, 0, 0)
 			pdf.SetXY(10, currentY)
 			pdf.SetFillColor(0, 0, 0)
@@ -411,7 +417,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 5, confirmed)
 
-			currentY += 8
+			currentY += 8 // 112
 		}
 	}
 	//----------------------------------
