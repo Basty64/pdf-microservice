@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"github.com/go-pdf/fpdf"
 	"image/color"
+	"log"
 	"math"
 	"pdf-microservice/internal/models"
 	"pdf-microservice/internal/qrcodes"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
+	partialPayment         = "PARTIAL PAYMENT"
 	verifyFlights          = "Please verify flight times prior to departure"
 	departure              = "DEPARTURE: "
 	departingAt            = "Departing At:"
@@ -22,11 +26,16 @@ const (
 	meals                  = "Meals:"
 	passengerName          = "Passenger Name:"
 	seats                  = "Seats:"
+	checkIn                = "Check-In Required"
 	booking                = "Booking:"
 	termsAndConditionsLOGO = "TERMS AND CONDITIONS\n\n"
+	class                  = "ECONOMY"
+	confirmed              = "CONFIRMED"
+	notAvailable           = "Not Available"
 )
 
-func GeneratePDF(data models.RequestData) ([]byte, error) {
+func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
+
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 
@@ -47,7 +56,32 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 	// Header text
 	pdf.SetFont("Roboto-Bold", "", 13)
 	pdf.SetTextColor(0, 0, 0)
-	headerText := fmt.Sprintf("%s    %s         %s", data.TripsStart, data.TripsEnd, strings.ToUpper(data.Location))
+
+	flightThereDate, err := time.Parse(time.RFC3339, data.Ticket.Itineraries[0].Segments[0].DepartureTime)
+	if err != nil {
+		flightThereDate, err = time.Parse("2006-01-02T15:04:05", data.Ticket.Itineraries[0].Segments[0].DepartureTime)
+		if err != nil {
+			log.Println("Error parsing time with 2006-01-02T15:04:05", err)
+		}
+	}
+
+	var flightBackDate time.Time
+	flightBackDate, err = time.Parse(time.RFC3339, data.Ticket.Itineraries[0].Segments[0].ArrivalTime)
+	if err != nil {
+		flightThereDate, err = time.Parse("2006-01-02T15:04:05", data.Ticket.Itineraries[0].Segments[0].ArrivalTime)
+		if err != nil {
+			log.Println("Error parsing time with 2006-01-02T15:04:05", err)
+		}
+	}
+
+	segmentsAmount := len(data.Ticket.Itineraries[0].Segments)
+
+	flightThereGeo := data.Ticket.Itineraries[0].Segments[0].DepartureAirport
+	flightBackGeo := data.Ticket.Itineraries[0].Segments[segmentsAmount-1].ArrivalAirport
+
+	headerGeo := fmt.Sprint(flightThereGeo + " - " + flightBackGeo)
+
+	headerText := fmt.Sprintf("%s    %s         %s", flightThereDate.Format("02-01-2006"), flightBackDate.Format("02-01-2006"), strings.ToUpper(headerGeo))
 	pdf.SetXY(10, currentY)
 	pdf.Cell(0, 6, headerText)
 	pdf.SetXY(65, currentY+0.3)
@@ -60,7 +94,7 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 	pdf.Polygon([]fpdf.PointType{{X: 37, Y: 8}, {X: 39, Y: 9.5}, {X: 37, Y: 11}}, "F")
 
 	// QR Code
-	qrCodeBytes, err := qrcodes.GenerateQRCode("https://github.com/go-pdf/fpdf")
+	qrCodeBytes, err := qrcodes.GenerateQRCode(data.QRURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate qr code: %w", err)
 	}
@@ -81,287 +115,304 @@ func GeneratePDF(data models.RequestData) ([]byte, error) {
 	currentY = 25.5
 
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 4, data.PreparedFor)
+	clientName := strings.ToUpper(fmt.Sprint(data.User.FirstName + "/" + data.User.LastName))
+	pdf.Cell(0, 4, clientName)
 	currentY = 30
 
 	// Reservation code
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 4, fmt.Sprintf("RESERVATION CODE     %s", data.ReservationCode))
+	pdf.Cell(0, 4, fmt.Sprintf("RESERVATION CODE     %d", data.Ticket.ID))
 	currentY = 34.5
 
 	// Partial payment
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 4, data.PartialPrepayment)
+	pdf.Cell(0, 4, partialPayment)
 	currentY = 39
 
 	// Final price
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 4, fmt.Sprintf("FINAL PRICE: %s (taxes included)", data.FinalPrice))
+	pdf.Cell(0, 4, fmt.Sprintf("FINAL PRICE: %s (taxes included)", data.Ticket.Price))
 	currentY = 51
 
 	// Flights data
-	for _, flight := range data.Flights {
+	for _, itinerary := range data.Ticket.Itineraries {
+		for _, segment := range itinerary.Segments {
 
-		// 2nd Line
-		pdf.Line(10, currentY, 200, currentY)
+			// Parsing timestamps
+			flightBackDate, err = time.Parse(time.RFC3339, segment.DepartureTime)
+			if err != nil {
+				flightThereDate, err = time.Parse("2006-01-02T15:04:05", segment.DepartureTime)
+				if err != nil {
+					log.Println("Error parsing time with 2006-01-02T15:04:05:", err)
+				}
+			}
 
-		// DEPARTURE TEXT-LINE
-		depatureDate := fmt.Sprintf(strings.ToUpper(flight.Date))
-		pdf.SetTextColor(0, 0, 0)
-		pdf.SetXY(10, currentY)
-		pdf.SetFillColor(0, 0, 0)
+			flightBackDate, err = time.Parse(time.RFC3339, segment.ArrivalTime)
+			if err != nil {
+				flightThereDate, err = time.Parse("2006-01-02T15:04:05", segment.ArrivalTime)
+				if err != nil {
+					log.Println("Error parsing time with 2006-01-02T15:04:05:", err)
+				}
+			}
 
-		currentY += 0.5 //51.5
-		pdf.Polygon([]fpdf.PointType{{X: 12, Y: currentY + 0.5}, {X: 14, Y: currentY + 2}, {X: 12, Y: currentY + 3.5}}, "F")
+			// 2nd Line
+			pdf.Line(10, currentY, 200, currentY)
 
-		pdf.SetXY(14, currentY)
-		currentX = pdf.GetX()
-		pdf.Cell(0, 5, departure)
-		currentX += pdf.GetStringWidth(departure)
+			// DEPARTURE TEXT-LINE
+			depatureDate := fmt.Sprintf(strings.ToUpper(flightBackDate.Format("02 January 2006")))
+			pdf.SetTextColor(0, 0, 0)
+			pdf.SetXY(10, currentY)
+			pdf.SetFillColor(0, 0, 0)
 
-		pdf.SetFont("Roboto-Bold", "", 11)
-		pdf.SetXY(currentX+1, currentY)
-		pdf.Cell(0, 5, depatureDate)
-		currentX += pdf.GetStringWidth(depatureDate)
+			currentY += 0.5 //51.5
+			pdf.Polygon([]fpdf.PointType{{X: 12, Y: currentY + 0.5}, {X: 14, Y: currentY + 2}, {X: 12, Y: currentY + 3.5}}, "F")
 
-		pdf.SetFont("Roboto-Regular", "", 8)
-		pdf.SetTextColor(int(darkGreyColor.R), int(darkGreyColor.G), int(darkGreyColor.B))
-		pdf.SetXY(currentX+4, currentY)
-		pdf.Cell(0, 6, verifyFlights)
-		currentY += 4 //55.5
+			pdf.SetXY(14, currentY)
+			currentX = pdf.GetX()
+			pdf.Cell(0, 5, departure)
+			currentX += pdf.GetStringWidth(departure)
 
-		pdf.SetFont("Roboto-Regular", "", 11)
-		pdf.SetTextColor(0, 0, 0)
+			pdf.SetFont("Roboto-Bold", "", 11)
+			pdf.SetXY(currentX+1, currentY)
+			pdf.Cell(0, 5, depatureDate)
+			currentX += pdf.GetStringWidth(depatureDate)
 
-		// Flight grey background
-		pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
-		pdf.Rect(10, currentY+1, 50, 40, "F")
+			pdf.SetFont("Roboto-Regular", "", 8)
+			pdf.SetTextColor(int(darkGreyColor.R), int(darkGreyColor.G), int(darkGreyColor.B))
+			pdf.SetXY(currentX+4, currentY)
+			pdf.Cell(0, 6, verifyFlights)
+			currentY += 4 //55.5
 
-		// Table top-line
-		currentY += 1 //56.5
-		pdf.SetDrawColor(int(darkGreyColor.R), int(darkGreyColor.G), int(darkGreyColor.B))
-		pdf.Line(60.5, currentY, 200, currentY)
+			pdf.SetFont("Roboto-Regular", "", 11)
+			pdf.SetTextColor(0, 0, 0)
 
-		// Table bottom-line
-		pdf.Line(60.5, currentY+40, 200, currentY+40)
+			// Flight grey background
+			pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
+			pdf.Rect(10, currentY+1, 50, 40, "F")
 
-		// Table left-line
-		pdf.Line(60.5, currentY, 60.5, currentY+40)
+			// Table top-line
+			currentY += 1 //56.5
+			pdf.SetDrawColor(int(darkGreyColor.R), int(darkGreyColor.G), int(darkGreyColor.B))
+			pdf.Line(60.5, currentY, 200, currentY)
 
-		// Table right-line
-		pdf.Line(200, currentY, 200, currentY+40)
+			// Table bottom-line
+			pdf.Line(60.5, currentY+40, 200, currentY+40)
 
-		// Dotted lines
-		pdf.SetLineCapStyle("round")
-		rectSize := 0.1
-		spaceLen := 0.5
-		drawDashedRectLine(pdf, 158, currentY, 158, currentY+40, rectSize, spaceLen)
-		drawDashedRectLine(pdf, 60.5, currentY+21.5, 158, currentY+21.5, rectSize, spaceLen)
-		drawDashedRectLine(pdf, 105, currentY+21.5, 105, currentY+40, rectSize, spaceLen)
+			// Table left-line
+			pdf.Line(60.5, currentY, 60.5, currentY+40)
 
-		// FLIGHT
-		currentX = 11
-		currentY += 1 //57.5
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(30, 4, "FLIGHT")
+			// Table right-line
+			pdf.Line(200, currentY, 200, currentY+40)
 
-		// Flight number
-		pdf.SetFont("Roboto-Bold", "", 11)
-		currentY += 8.5 //66
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(30, 4, flight.FlightNumber)
+			// Dotted lines
+			pdf.SetLineCapStyle("round")
+			rectSize := 0.1
+			spaceLen := 0.5
+			drawDashedRectLine(pdf, 158, currentY, 158, currentY+40, rectSize, spaceLen)
+			drawDashedRectLine(pdf, 60.5, currentY+21.5, 158, currentY+21.5, rectSize, spaceLen)
+			drawDashedRectLine(pdf, 105, currentY+21.5, 105, currentY+40, rectSize, spaceLen)
 
-		// Airline
-		pdf.SetFont("Roboto-Regular", "", 8)
-		currentY += 8 //74
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(30, 4, fmt.Sprintf("Airline: %s", flight.Airline))
-		pdf.SetX(60)
+			// FLIGHT
+			currentX = 11
+			currentY += 1 //57.5
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(30, 4, "FLIGHT")
 
-		// Class
-		currentY += 4 //78
-		pdf.SetXY(currentX, currentY)
-		flightClass := fmt.Sprintf("Class: %s", strings.ToUpper(flight.Class))
-		pdf.Cell(30, 4, flightClass)
+			// Flight number
+			pdf.SetFont("Roboto-Bold", "", 11)
+			currentY += 8.5 //66
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(30, 4, segment.Carrier)
 
-		// Status
-		currentY += 8 //86
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(30, 4, fmt.Sprintf("Status: %s", flight.Status))
-		// ----------------------------------------------------------
+			// Airline
+			pdf.SetFont("Roboto-Regular", "", 8)
+			currentY += 8 //74
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(30, 4, fmt.Sprintf("Airline: %s", segment.CarrierName))
+			pdf.SetX(60)
 
-		// FLIGHT AIRPORTS CODES
-		// Start airport-code
-		pdf.SetFont("Roboto-Regular", "", 11)
-		currentX = 64
-		currentY -= 27.5 //58.5
-		startGeo := strings.Split(flight.Departure, " ")
-		airportCode := startGeo[0]
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, airportCode)
+			// Class
+			currentY += 4 //78
+			pdf.SetXY(currentX, currentY)
+			flightClass := fmt.Sprintf("Class: %s", strings.ToUpper(class))
+			pdf.Cell(30, 4, flightClass)
 
-		// Finish airport-code
-		currentX = 110
-		finishGeo := strings.Split(flight.Arrival, " ")
-		airportCode = finishGeo[0]
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, airportCode)
+			// Status
+			currentY += 8 //86
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(30, 4, fmt.Sprintf("Status: %s", confirmed))
+			// ----------------------------------------------------------
 
-		// Triangle
-		currentX = 108
-		pdf.SetFillColor(0, 0, 0)
-		pdf.SetXY(currentX, currentY)
-		pdf.Polygon([]fpdf.PointType{{X: currentX, Y: currentY}, {X: currentX + 2, Y: currentY + 1.5}, {X: currentX, Y: currentY + 3}}, "F")
+			// FLIGHT AIRPORTS CODES
+			// Start airport-code
+			pdf.SetFont("Roboto-Regular", "", 11)
+			currentX = 64
+			currentY -= 27.5 //58.5
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, segment.DepartureAirport)
 
-		// Start airport city and country
-		currentX = 64
-		currentY += 4.5 //62
-		pdf.SetFont("Roboto-Regular", "", 8)
-		cityAndCountry := strings.ToUpper(startGeo[1] + " " + startGeo[2])
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, cityAndCountry)
+			// Finish airport-code
+			currentX = 110
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, segment.ArrivalAirport)
 
-		// Finish airport city and country
-		currentX = 110
-		cityAndCountry = strings.ToUpper(finishGeo[1] + " " + finishGeo[2])
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, cityAndCountry)
+			// Triangle
+			currentX = 108
+			pdf.SetFillColor(0, 0, 0)
+			pdf.SetXY(currentX, currentY)
+			pdf.Polygon([]fpdf.PointType{{X: currentX, Y: currentY}, {X: currentX + 2, Y: currentY + 1.5}, {X: currentX, Y: currentY + 3}}, "F")
 
-		//Departing At
-		currentX = 64
-		currentY += 18 //80
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, departingAt)
+			// Start airport city and country
+			currentX = 64
+			currentY += 4.5 //62
+			pdf.SetFont("Roboto-Regular", "", 8)
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, segment.DepartureAirport)
 
-		// Departure date
-		currentX = 64
-		currentY += 3 //83
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, flight.Date)
+			// Finish airport city and country
+			currentX = 110
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, segment.ArrivalAirport)
 
-		// Departure time
-		pdf.SetFont("Roboto-Regular", "", 12)
-		currentX = 64
-		currentY += 4 //87
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, flight.DepartureTime)
+			//Departing At
+			currentX = 64
+			currentY += 18 //80
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, departingAt)
 
-		//Arriving at
-		pdf.SetFont("Roboto-Regular", "", 8)
-		currentX = 112
-		currentY -= 7 //80
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, arrivingAt)
+			// Departure date
+			currentX = 64
+			currentY += 3 //83
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, flightThereDate.Format("02 January 2006"))
 
-		// Arrival date
-		currentX = 112
-		currentY += 3 //83
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, flight.Date)
+			// Departure time
+			pdf.SetFont("Roboto-Regular", "", 12)
+			currentX = 64
+			currentY += 4 //87
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, flightThereDate.Format("03:04"))
 
-		// Arrival time
-		pdf.SetFont("Roboto-Regular", "", 12)
-		currentX = 112
-		currentY += 4 //87
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, flight.ArrivalTime)
-		//----------------------------------------------------------
+			//Arriving at
+			pdf.SetFont("Roboto-Regular", "", 8)
+			currentX = 112
+			currentY -= 7 //80
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, arrivingAt)
 
-		// FLIGHT RIGHT DATA
-		// Aircraft
-		pdf.SetFont("Roboto-Regular", "", 8)
-		currentX = 160
-		currentY -= 29 //58
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, aircraft)
+			// Arrival date
+			currentX = 112
+			currentY += 3 //83
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, flightBackDate.Format("03:04"))
 
-		// Aircraft number
-		currentX = 160
-		currentY += 4 // 62
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, flight.Aircraft)
+			// Arrival time
+			pdf.SetFont("Roboto-Regular", "", 12)
+			currentX = 112
+			currentY += 4 //87
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, flightBackDate.Format("03:04"))
+			//----------------------------------------------------------
 
-		// Distance
-		currentX = 160
-		currentY += 4 // 66
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, distance)
+			// FLIGHT RIGHT DATA
+			// Aircraft
+			pdf.SetFont("Roboto-Regular", "", 8)
+			currentX = 160
+			currentY -= 29 //58
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, aircraft)
 
-		// Distance measure
-		currentX = 160
-		currentY += 4 // 70
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, flight.Distance)
+			// Aircraft number
+			currentX = 160
+			currentY += 4 // 62
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, notAvailable)
 
-		// Stops
-		currentX = 160
-		currentY += 4 // 74
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, stops)
+			// Distance
+			currentX = 160
+			currentY += 4 // 66
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, distance)
 
-		//Space
-		currentY += 5 // 79
+			// Distance data
+			currentX = 160
+			currentY += 4 // 70
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, notAvailable)
 
-		// Meals
-		currentX = 160
-		currentY += 4 // 83
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, meals)
+			// Stops
+			currentX = 160
+			currentY += 4 // 74
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, stops)
 
-		// Meals data
-		currentX = 160
-		currentY += 4 //87
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 4, flight.Meals)
+			//Space data
+			currentX = 160
+			currentY += 5 // 79
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, strconv.Itoa(itinerary.Stops))
 
-		//---------------------------------------------
+			// Meals
+			currentX = 160
+			currentY += 4 // 83
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, meals)
 
-		// BOTTOM TABLE
-		// Grey background
-		pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
-		pdf.Rect(10, currentY+12.5, 190, 4.5, "F")
+			// Meals data
+			currentX = 160
+			currentY += 4 //87
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 4, notAvailable)
 
-		// Dotted lines
-		drawDashedRectLine(pdf, 99, currentY+13, 99, currentY+21, rectSize, spaceLen)
-		drawDashedRectLine(pdf, 154, currentY+13, 154, currentY+21, rectSize, spaceLen)
+			//---------------------------------------------
 
-		// Passenger name
-		currentX = 10
-		currentY += 12 //100
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 5, passengerName)
+			// BOTTOM TABLE
+			// Grey background
+			pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
+			pdf.Rect(10, currentY+12.5, 190, 4.5, "F")
 
-		// Passenger data
-		currentX = 10
-		currentY += 4 // 104
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 5, flight.PassengerName)
+			// Dotted lines
+			drawDashedRectLine(pdf, 99, currentY+13, 99, currentY+21, rectSize, spaceLen)
+			drawDashedRectLine(pdf, 154, currentY+13, 154, currentY+21, rectSize, spaceLen)
 
-		// Seats
-		currentX = 100
-		currentY -= 4 // 100
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 5, seats)
+			// Passenger name
+			currentX = 10
+			currentY += 12 //100
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 5, passengerName)
 
-		// Seats data
-		currentX = 100
-		currentY += 4 // 104
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 5, flight.Seats)
+			// Passenger data
+			currentX = 10
+			currentY += 4 // 104
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 5, clientName)
 
-		//	Booking
-		currentX = 155
-		currentY -= 4 // 100
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 5, booking)
+			// Seats
+			currentX = 100
+			currentY -= 4 // 100
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 5, seats)
 
-		//	Booking Data
-		currentX = 155
-		currentY += 4 // 104
-		pdf.SetXY(currentX, currentY)
-		pdf.Cell(0, 5, flight.Booking)
+			// Seats data
+			currentX = 100
+			currentY += 4 // 104
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 5, checkIn)
 
-		currentY += 8
+			//	Booking
+			currentX = 155
+			currentY -= 4 // 100
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 5, booking)
+
+			//	Booking Data
+			currentX = 155
+			currentY += 4 // 104
+			pdf.SetXY(currentX, currentY)
+			pdf.Cell(0, 5, confirmed)
+
+			currentY += 8
+		}
 	}
 	//----------------------------------
 

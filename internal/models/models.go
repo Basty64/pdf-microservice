@@ -28,3 +28,44 @@ type Flight struct {
 	Seats         string `json:"seats"`
 	Booking       string `json:"booking"`
 }
+
+type RequestDataNew struct {
+	Ticket Ticket `json:"ticket"`
+	User   User   `json:"user"`
+	QRURL  string `json:"qr_url"`
+}
+
+type Ticket struct {
+	ID          int           `json:"id"`
+	Price       string        `json:"price"`
+	Currency    string        `json:"currency"`
+	Itineraries []Itineraries `json:"itineraries"`
+	Airline     string        `json:"airline"`
+}
+
+type Itineraries struct {
+	Duration string     `json:"duration"`
+	Segments []Segments `json:"segments"`
+	Stops    int        `json:"stops"`
+}
+
+type Segments struct {
+	DepartureTime    string `json:"departure_time"`
+	ArrivalTime      string `json:"arrival_time"`
+	DepartureAirport string `json:"departure_airport"`
+	ArrivalAirport   string `json:"arrival_airport"`
+	Carrier          string `json:"carrier"`
+	CarrierName      string `json:"carrier_name"`
+	CarrierLogo      string `json:"carrier_logo"`
+	Duration         string `json:"duration"`
+}
+
+type User struct {
+	Email          string `json:"email"`
+	FirstName      string `json:"first_name"`
+	Gender         string `json:"gender"`
+	LastName       string `json:"last_name"`
+	Nationality    string `json:"nationality"`
+	NumberPassport int    `json:"number_passport"`
+	SeriaPassport  int    `json:"seria_passport"`
+}

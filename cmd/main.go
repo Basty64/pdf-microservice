@@ -20,6 +20,7 @@ import (
 func main() {
 
 	r := chi.NewRouter()
+
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
@@ -41,7 +42,7 @@ func main() {
 
 func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 
-	var requestData models.RequestData
+	var requestData models.RequestDataNew
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
