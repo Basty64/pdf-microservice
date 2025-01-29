@@ -1,2 +1,14 @@
 [api]
+host = "localhost"
+port = "8080"
+local_save = false
 
+[minio]
+accessKeyID = "YOUR_ACCESS_KEY"
+secretAccessKey = "YOUR_SECRET_KEY"
+useSSL = false
+bucketName = "your-bucket"
+region = "RU"
+endpoint        = "https://s3.timeweb.com"
+filePath        = "path/to/your/file.pdf
+objectKey       = "file.pdf"
