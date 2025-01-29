@@ -9,7 +9,7 @@ import (
 )
 
 func GenerateQRCode(data string) ([]byte, error) {
-	qrCode, err := qrcode.Encode(data, qrcode.Highest, 512)
+	qrCode, err := qrcode.Encode(data, qrcode.Medium, 512)
 	if err != nil {
 		return nil, err
 	}

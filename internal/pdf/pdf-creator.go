@@ -65,16 +65,17 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 		}
 	}
 
+	itinerariesAmount := len(data.Ticket.Itineraries)
+	segmentsAmount := len(data.Ticket.Itineraries[itinerariesAmount-1].Segments)
+
 	var flightBackDate time.Time
-	flightBackDate, err = time.Parse(time.RFC3339, data.Ticket.Itineraries[0].Segments[0].ArrivalTime)
+	flightBackDate, err = time.Parse(time.RFC3339, data.Ticket.Itineraries[itinerariesAmount-1].Segments[segmentsAmount-1].ArrivalTime)
 	if err != nil {
-		flightThereDate, err = time.Parse("2006-01-02T15:04:05", data.Ticket.Itineraries[0].Segments[0].ArrivalTime)
+		flightBackDate, err = time.Parse("2006-01-02T15:04:05", data.Ticket.Itineraries[itinerariesAmount-1].Segments[segmentsAmount-1].ArrivalTime)
 		if err != nil {
 			log.Println("Error parsing time with 2006-01-02T15:04:05", err)
 		}
 	}
-
-	segmentsAmount := len(data.Ticket.Itineraries[0].Segments)
 
 	flightThereGeo := data.Ticket.Itineraries[0].Segments[0].DepartureAirport
 	flightBackGeo := data.Ticket.Itineraries[0].Segments[segmentsAmount-1].ArrivalAirport
@@ -145,7 +146,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			}
 
 			// Parsing timestamps
-			flightBackDate, err = time.Parse(time.RFC3339, segment.DepartureTime)
+			flightThereDate, err = time.Parse(time.RFC3339, segment.DepartureTime)
 			if err != nil {
 				flightThereDate, err = time.Parse("2006-01-02T15:04:05", segment.DepartureTime)
 				if err != nil {
@@ -165,7 +166,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.Line(10, currentY, 200, currentY)
 
 			// DEPARTURE TEXT-LINE
-			depatureDate := fmt.Sprintf(strings.ToUpper(flightBackDate.Format("Monday 02 January 2006")))
+			depatureDate := fmt.Sprintf(strings.ToUpper(flightThereDate.Format("Monday 02 January 2006")))
 			pdf.SetTextColor(0, 0, 0)
 			pdf.SetXY(10, currentY)
 			pdf.SetFillColor(0, 0, 0)
@@ -175,6 +176,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 
 			pdf.SetXY(14, currentY)
 			currentX = pdf.GetX()
+			pdf.SetFont("Roboto-Regular", "", 11)
 			pdf.Cell(0, 5, departure)
 			currentX += pdf.GetStringWidth(departure)
 
@@ -422,21 +424,16 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 	}
 	//----------------------------------
 
-	pdf.Line(10, 260, 190, 260)
+	pdf.Line(10, currentY+2, 190, currentY+2)
 
 	// Terms and conditions
 	currentX = 10.0
 	currentY += 5.0
 
 	// Выводим заголовок жирным шрифтом
-	pdf.SetFont("Roboto-Bold", "", 12)
 	pdf.SetXY(currentX, currentY)
+	pdf.SetFont("Roboto-Bold", "", 11)
 	pdf.Cell(0, 5, termsAndConditionsLOGO)
-
-	// Выводим основной текст обычным шрифтом
-	pdf.SetFont("Roboto-Regular", "", 9)
-	currentY += 5.0 // Сдвигаем Y на высоту заголовка
-	pdf.SetXY(currentX, currentY)
 
 	// Вывод многострочного текста, обернув в MultiCell
 	termsAndConditions := "If air carriage is provided for hereon, this document must be exchanged for a ticket and at such time prior to departure as may be required\n" +
@@ -460,8 +457,10 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 		"named person, shall be deemed to be consent to and acceptance by such person or persons of these conditions."
 
 	currentX = 10.0
-	currentY += 3.0
+	currentY += 8.0 // Сдвигаем Y на высоту заголовка
 	pdf.SetXY(currentX, currentY)
+	// Выводим основной текст обычным шрифтом
+	pdf.SetFont("Roboto-Regular", "", 8)
 	// Выводим многострочный текст с использованием MultiCell, устанавливаем ширину 0, т.е. на всю строку
 	pdf.MultiCell(0, 3, termsAndConditions, "", "", false)
 

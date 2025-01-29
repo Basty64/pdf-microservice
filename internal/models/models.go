@@ -62,10 +62,12 @@ type Segments struct {
 
 type User struct {
 	Email          string `json:"email"`
+	PhoneNumber    string `json:"phone_number"`
 	FirstName      string `json:"first_name"`
 	Gender         string `json:"gender"`
 	LastName       string `json:"last_name"`
 	Nationality    string `json:"nationality"`
 	NumberPassport int    `json:"number_passport"`
 	SeriaPassport  int    `json:"seria_passport"`
+	ValidityPeriod string `json:"validity_period"`
 }
