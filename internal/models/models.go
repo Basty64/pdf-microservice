@@ -16,7 +16,6 @@ type Ticket struct {
 	StartCountryName string        `json:"start_country_name"`
 	FinalCityName    string        `json:"final_city_name"`
 	FinalCountryName string        `json:"final_country_name"`
-	QRURL            string        `json:"qr_url"`
 }
 
 type Itineraries struct {
