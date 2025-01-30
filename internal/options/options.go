@@ -6,8 +6,8 @@ import (
 )
 
 type Config struct {
-	Api   Api
-	Minio MinIO
+	Api Api
+	S3  S3
 }
 
 type Api struct {
@@ -17,7 +17,7 @@ type Api struct {
 	LocalSave bool   `mapstructure:"local_save"`
 }
 
-type MinIO struct {
+type S3 struct {
 	Endpoint        string `mapstructure:"endpoint"`
 	AccessKeyID     string `mapstructure:"accessKeyID"`
 	SecretAccessKey string `mapstructure:"secretAccessKey"`

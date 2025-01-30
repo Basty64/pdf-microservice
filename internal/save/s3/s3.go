@@ -16,13 +16,13 @@ import (
 
 func UploadToS3(ctx context.Context, cfg *options.Config, filename string, fileBytes []byte) (string, error) {
 
-	staticCreds := credentials.NewStaticCredentialsProvider(cfg.Minio.AccessKeyID, cfg.Minio.SecretAccessKey, "")
+	staticCreds := credentials.NewStaticCredentialsProvider(cfg.S3.AccessKeyID, cfg.S3.SecretAccessKey, "")
 
 	// Создание резолвера конечной точки с опциями
 	endpointResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		if service == s3.ServiceID && region == region {
 			return aws.Endpoint{
-				URL:               cfg.Minio.Endpoint,
+				URL:               cfg.S3.Endpoint,
 				SigningRegion:     region,
 				HostnameImmutable: true,
 			}, nil
@@ -33,7 +33,7 @@ func UploadToS3(ctx context.Context, cfg *options.Config, filename string, fileB
 
 	// Создание конфигурации для клиента S3
 	cfgNew, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(cfg.Minio.Region),
+		config.WithRegion(cfg.S3.Region),
 		config.WithCredentialsProvider(staticCreds),
 		config.WithEndpointResolverWithOptions(endpointResolver),
 	)
@@ -46,16 +46,16 @@ func UploadToS3(ctx context.Context, cfg *options.Config, filename string, fileB
 	s3Client := s3.NewFromConfig(cfgNew)
 
 	// Чтение файла PDF
-	file, err := os.Open(cfg.Minio.FilePath)
+	file, err := os.Open(cfg.S3.FilePath)
 	if err != nil {
-		log.Fatalf("unable to open file %q, %v", cfg.Minio.FilePath, err)
+		log.Fatalf("unable to open file %q, %v", cfg.S3.FilePath, err)
 	}
 	defer file.Close()
 
 	// Загрузка файла в S3
 	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(cfg.Minio.BucketName),
-		Key:    aws.String(cfg.Minio.ObjectKey),
+		Bucket: aws.String(cfg.S3.BucketName),
+		Key:    aws.String(cfg.S3.ObjectKey),
 		Body:   file,
 	})
 	if err != nil {
@@ -64,7 +64,7 @@ func UploadToS3(ctx context.Context, cfg *options.Config, filename string, fileB
 
 	log.Println("File uploaded successfully")
 
-	s3Url, err := generatePresignedUrl(ctx, s3Client, cfg.Minio.BucketName, filename)
+	s3Url, err := generatePresignedUrl(ctx, s3Client, cfg.S3.BucketName, filename)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate presigned url to S3: %v", err)
 	}
