@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"pdf-microservice/internal/options"
 )
 
-func SaveLocalPDF(filename string, pdfBytes []byte) error {
+func SaveLocalPDF(cfg *options.Config, filename string, pdfBytes []byte) error {
 
-	if _, err := os.Stat("local-pdfs"); os.IsNotExist(err) {
-		err = os.Mkdir("local-pdfs", os.ModeDir|0755)
+	if _, err := os.Stat(cfg.S3.FilePath); os.IsNotExist(err) {
+		err = os.Mkdir(cfg.S3.FilePath, os.ModeDir|0755)
 		if err != nil {
 			return fmt.Errorf("failed to create directory 'local-pdfs': %w", err)
 		}
