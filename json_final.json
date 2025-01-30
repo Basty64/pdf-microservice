@@ -1,7 +1,7 @@
 [
   {
     "ticket": {
-      "id": 81,
+      "id": 875768,
       "price": "471.38",
       "currency": "EUR",
       "itineraries": [
@@ -107,8 +107,7 @@
       "start_city_name": "Moscow",
       "start_country_name": "Russia",
       "final_city_name": "Hamburg",
-      "final_country_name": "Germany",
-      "qr_url": "https://s3.timeweb.cloud/6d6c0abb-d61028e9-4bc0-48ce-a7b4-7085d940e076/tickets/81.pdf"
+      "final_country_name": "Germany"
     },
     "user": {
       "email": "USER@EXAMPLE.COM",
@@ -116,6 +115,46 @@
       "adults": [
         {
           "first_name": "Evgeniy",
+          "last_name": "Prigozhin",
+          "birth_date": "1977-01-28",
+          "gender": "M",
+          "seria_passport": 12,
+          "number_passport": 12342121,
+          "nationality": "STRING",
+          "validity_period": "2027-01-28"
+        },
+        {
+          "first_name": "Oleg",
+          "last_name": "Prigozhin",
+          "birth_date": "1977-01-28",
+          "gender": "M",
+          "seria_passport": 12,
+          "number_passport": 12342121,
+          "nationality": "STRING",
+          "validity_period": "2027-01-28"
+        },
+        {
+          "first_name": "Maksim",
+          "last_name": "Prigozhin",
+          "birth_date": "1977-01-28",
+          "gender": "M",
+          "seria_passport": 12,
+          "number_passport": 12342121,
+          "nationality": "STRING",
+          "validity_period": "2027-01-28"
+        },
+        {
+          "first_name": "Dima",
+          "last_name": "Prigozhin",
+          "birth_date": "1977-01-28",
+          "gender": "M",
+          "seria_passport": 12,
+          "number_passport": 12342121,
+          "nationality": "STRING",
+          "validity_period": "2027-01-28"
+        },
+        {
+          "first_name": "Anton",
           "last_name": "Prigozhin",
           "birth_date": "1977-01-28",
           "gender": "M",
