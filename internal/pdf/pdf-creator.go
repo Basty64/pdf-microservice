@@ -33,7 +33,7 @@ const (
 	notAvailable           = "Not Available"
 )
 
-func GeneratePDF(ticket models.Ticket, client models.Adult) ([]byte, error) {
+func GeneratePDF(ticket models.Ticket, client models.Adult, url string) ([]byte, error) {
 
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
@@ -94,7 +94,7 @@ func GeneratePDF(ticket models.Ticket, client models.Adult) ([]byte, error) {
 	pdf.Polygon([]fpdf.PointType{{X: 37, Y: 8}, {X: 39, Y: 9.5}, {X: 37, Y: 11}}, "F")
 
 	// QR Code
-	qrCodeBytes, err := qrcodes.GenerateQRCode(ticket.QRURL)
+	qrCodeBytes, err := qrcodes.GenerateQRCode(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate qr code: %w", err)
 	}

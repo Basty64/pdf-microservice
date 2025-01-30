@@ -6,7 +6,18 @@ import (
 	"github.com/skip2/go-qrcode"
 	"image"
 	"image/png"
+	"pdf-microservice/internal/options"
+	"strings"
 )
+
+func CreateURL(cfg *options.Config, filename string) string {
+
+	url := []string{"https:", cfg.S3.Endpoint, cfg.S3.BucketName, "tickets", filename}
+
+	s3Url := strings.Join(url, "/")
+
+	return s3Url
+}
 
 func GenerateQRCode(data string) ([]byte, error) {
 	qrCode, err := qrcode.Encode(data, qrcode.Medium, 512)

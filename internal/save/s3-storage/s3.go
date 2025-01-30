@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"log"
 	"pdf-microservice/internal/options"
 )
 
@@ -23,7 +22,7 @@ func NewS3Client(cfg *options.Config) (*minio.Client, error) {
 	return client, nil
 }
 
-func UploadFile(cfg *options.Config, client *minio.Client, filename string, fileBytes []byte) (string, error) {
+func UploadFile(cfg *options.Config, client *minio.Client, filename string, fileBytes []byte) error {
 
 	key := fmt.Sprintf("tickets/" + filename)
 
@@ -32,12 +31,9 @@ func UploadFile(cfg *options.Config, client *minio.Client, filename string, file
 		ContentType: "application/pdf",
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	log.Println("File uploaded successfully")
-	s3Url := fmt.Sprintf(cfg.S3.Endpoint + cfg.S3.BucketName + "/tickets/" + filename)
-
-	return s3Url, nil
+	return nil
 
 }

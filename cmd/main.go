@@ -11,6 +11,7 @@ import (
 	"pdf-microservice/internal/models"
 	"pdf-microservice/internal/options"
 	"pdf-microservice/internal/pdf"
+	"pdf-microservice/internal/qrcodes"
 	"pdf-microservice/internal/save/local"
 	"pdf-microservice/internal/save/s3-storage"
 	"time"
@@ -61,49 +62,51 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resultPDFSBytes := make(map[string][]byte)
+	var filenames []string
+	var s3URLs []string
 
-	for _, adult := range requestData[0].User.Adults {
+	for i, adult := range requestData[0].User.Adults {
+		filenames = append(filenames, fmt.Sprintf("%d-%s-%s.pdf", requestData[0].Ticket.ID, adult.FirstName, adult.LastName))
+		s3URLs = append(s3URLs, qrcodes.CreateURL(Cfg, filenames[i]))
+	}
 
-		resultPDFSBytes[adult.FirstName], err = pdf.GeneratePDF(requestData[0].Ticket, adult)
+	for i, adult := range requestData[0].User.Adults {
+
+		resultPDFSBytes[adult.FirstName], err = pdf.GeneratePDF(requestData[0].Ticket, adult, s3URLs[i])
 		if err != nil {
 			log.Printf("Error generating PDF: %v", err)
 			http.Error(w, "Failed to generate PDF", http.StatusInternalServerError)
 		}
 	}
 
-	filename := fmt.Sprintf("%d.pdf", requestData[0].Ticket.ID)
-
 	response := make(map[string]string)
 	var pdfKey string
 
 	if Cfg.Api.LocalSave {
-		for _, adult := range requestData[0].User.Adults {
-			err = local.SaveLocalPDF(Cfg, filename, resultPDFSBytes[adult.FirstName])
+		for i, adult := range requestData[0].User.Adults {
+			err = local.SaveLocalPDF(Cfg, filenames[i], resultPDFSBytes[adult.FirstName])
 			if err != nil {
 				log.Printf("Failed to save PDF locally: %v", err)
 				http.Error(w, "Failed to save PDF locally", http.StatusBadRequest)
 			}
 			pdfKey = fmt.Sprint(adult.FirstName + "-local-pdf")
-			response[pdfKey] = filename
+			response[pdfKey] = filenames[i]
+			log.Printf("Successfully generated and saved PDF locally: %s", filenames[i])
 		}
-
-		log.Printf("Successfully generated and saved PDF locally: %s", filename)
 	}
 
-	var s3Url string
 	var s3Key string
 
-	for _, adult := range requestData[0].User.Adults {
-		s3Url, err = s3_storage.UploadFile(Cfg, s3Client, filename, resultPDFSBytes[adult.FirstName])
+	for i, adult := range requestData[0].User.Adults {
+		err = s3_storage.UploadFile(Cfg, s3Client, filenames[i], resultPDFSBytes[adult.FirstName])
 		if err != nil {
 			log.Printf("Failed to upload to S3: %v", err)
 			http.Error(w, "Failed to upload to S3", http.StatusBadRequest)
 		}
 
-		s3Key = fmt.Sprint(adult.FirstName + "-s3-storage-url")
+		s3Key = fmt.Sprint(adult.FirstName + "-" + adult.LastName + "-s3-storage-url")
 
-		response[s3Key] = s3Url
-
+		response[s3Key] = s3URLs[i]
 	}
 
 	if err == nil {
