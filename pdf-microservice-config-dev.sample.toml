@@ -3,12 +3,12 @@ host = "localhost"
 port = "8080"
 local_save = false
 
-[minio]
-accessKeyID = "YOUR_ACCESS_KEY"
-secretAccessKey = "YOUR_SECRET_KEY"
-useSSL = false
-bucketName = "your-bucket"
+[s3]
+access_key_id = "YOUR_ACCESS_KEY"
+secret_access_key = "YOUR_SECRET_KEY"
+use_ssl = false
+bucket_name = "your-bucket"
 region = "RU"
 endpoint        = "https://s3.timeweb.com"
-filePath        = "path/to/your/file.pdf
-objectKey       = "file.pdf"
+file_path        = "path/to/your/file.pdf"
+object_key       = "file.pdf"

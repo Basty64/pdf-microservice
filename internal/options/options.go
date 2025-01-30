@@ -19,13 +19,13 @@ type Api struct {
 
 type S3 struct {
 	Endpoint        string `mapstructure:"endpoint"`
-	AccessKeyID     string `mapstructure:"accessKeyID"`
-	SecretAccessKey string `mapstructure:"secretAccessKey"`
-	UseSSL          bool   `mapstructure:"useSSL"`
-	BucketName      string `mapstructure:"bucketName"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	UseSSL          bool   `mapstructure:"use_ssl"`
+	BucketName      string `mapstructure:"bucket_name"`
 	Region          string `mapstructure:"region"`
-	FilePath        string `mapstructure:"filePath"`
-	ObjectKey       string `mapstructure:"objectKey"`
+	FilePath        string `mapstructure:"file_path"`
+	ObjectKey       string `mapstructure:"object_key "`
 }
 
 func LoadConfig(configPath string) (*Config, error) {
