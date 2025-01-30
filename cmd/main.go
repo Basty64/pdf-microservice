@@ -124,5 +124,5 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode json response", http.StatusInternalServerError)
 	}
 
-	log.Printf("Successfully generated and uploaded PDF to %s: %s", Cfg.Minio.BucketName, response)
+	log.Printf("Successfully generated and uploaded PDF to %s: %s", Cfg.S3.BucketName, response)
 }
