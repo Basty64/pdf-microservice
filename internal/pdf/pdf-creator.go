@@ -29,12 +29,11 @@ const (
 	checkIn                = "Check-In Required"
 	booking                = "Booking:"
 	termsAndConditionsLOGO = "TERMS AND CONDITIONS\n\n"
-	class                  = "ECONOMY"
 	confirmed              = "CONFIRMED"
 	notAvailable           = "Not Available"
 )
 
-func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
+func GeneratePDF(ticket models.Ticket, client models.Adult) ([]byte, error) {
 
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
@@ -57,28 +56,28 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 	pdf.SetFont("Roboto-Bold", "", 13)
 	pdf.SetTextColor(0, 0, 0)
 
-	flightThereDate, err := time.Parse(time.RFC3339, data.Ticket.Itineraries[0].Segments[0].DepartureTime)
+	flightThereDate, err := time.Parse(time.RFC3339, ticket.Itineraries[0].Segments[0].DepartureTime)
 	if err != nil {
-		flightThereDate, err = time.Parse("2006-01-02T15:04:05", data.Ticket.Itineraries[0].Segments[0].DepartureTime)
+		flightThereDate, err = time.Parse("2006-01-02T15:04:05", ticket.Itineraries[0].Segments[0].DepartureTime)
 		if err != nil {
 			log.Println("Error parsing time with 2006-01-02T15:04:05", err)
 		}
 	}
 
-	itinerariesAmount := len(data.Ticket.Itineraries)
-	segmentsAmount := len(data.Ticket.Itineraries[itinerariesAmount-1].Segments)
+	itinerariesAmount := len(ticket.Itineraries)
+	segmentsAmount := len(ticket.Itineraries[itinerariesAmount-1].Segments)
 
 	var flightBackDate time.Time
-	flightBackDate, err = time.Parse(time.RFC3339, data.Ticket.Itineraries[itinerariesAmount-1].Segments[segmentsAmount-1].ArrivalTime)
+	flightBackDate, err = time.Parse(time.RFC3339, ticket.Itineraries[itinerariesAmount-1].Segments[segmentsAmount-1].ArrivalTime)
 	if err != nil {
-		flightBackDate, err = time.Parse("2006-01-02T15:04:05", data.Ticket.Itineraries[itinerariesAmount-1].Segments[segmentsAmount-1].ArrivalTime)
+		flightBackDate, err = time.Parse("2006-01-02T15:04:05", ticket.Itineraries[itinerariesAmount-1].Segments[segmentsAmount-1].ArrivalTime)
 		if err != nil {
 			log.Println("Error parsing time with 2006-01-02T15:04:05", err)
 		}
 	}
 
-	flightThereGeo := data.Ticket.Itineraries[0].Segments[0].DepartureAirport
-	flightBackGeo := data.Ticket.Itineraries[0].Segments[segmentsAmount-1].ArrivalAirport
+	flightThereGeo := strings.ToUpper(fmt.Sprintf("%s, %s", ticket.StartCityName, ticket.StartCountryName))
+	flightBackGeo := strings.ToUpper(fmt.Sprintf("%s, %s", ticket.FinalCityName, ticket.FinalCountryName))
 
 	headerGeo := fmt.Sprint(flightThereGeo + " - " + flightBackGeo)
 
@@ -95,7 +94,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 	pdf.Polygon([]fpdf.PointType{{X: 37, Y: 8}, {X: 39, Y: 9.5}, {X: 37, Y: 11}}, "F")
 
 	// QR Code
-	qrCodeBytes, err := qrcodes.GenerateQRCode(data.QRURL)
+	qrCodeBytes, err := qrcodes.GenerateQRCode(ticket.QRURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate qr code: %w", err)
 	}
@@ -116,13 +115,13 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 	currentY = 25.5
 
 	pdf.SetXY(10, currentY)
-	clientName := strings.ToUpper(fmt.Sprint(data.User.FirstName + "/" + data.User.LastName))
+	clientName := strings.ToUpper(fmt.Sprint(client.FirstName + "/" + client.LastName))
 	pdf.Cell(0, 4, clientName)
 	currentY = 30
 
 	// Reservation code
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 4, fmt.Sprintf("RESERVATION CODE     %d", data.Ticket.ID))
+	pdf.Cell(0, 4, fmt.Sprintf("RESERVATION CODE     %d", ticket.ID))
 	currentY = 34.5
 
 	// Partial payment
@@ -132,11 +131,11 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 
 	// Final price
 	pdf.SetXY(10, currentY)
-	pdf.Cell(0, 4, fmt.Sprintf("FINAL PRICE: %s (taxes included)", data.Ticket.Price))
+	pdf.Cell(0, 4, fmt.Sprintf("FINAL PRICE: %s (taxes included)", ticket.Price))
 	currentY = 51
 
-	// Flights data
-	for _, itinerary := range data.Ticket.Itineraries {
+	// Flights ticket
+	for _, itinerary := range ticket.Itineraries {
 		for _, segment := range itinerary.Segments {
 
 			if currentY+70 > 297 {
@@ -242,7 +241,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			// Class
 			currentY += 4 //78
 			pdf.SetXY(currentX, currentY)
-			flightClass := fmt.Sprintf("Class: %s", strings.ToUpper(class))
+			flightClass := fmt.Sprintf("Class: %s", strings.ToUpper(ticket.FlightClass))
 			pdf.Cell(30, 4, flightClass)
 
 			// Status
@@ -275,12 +274,14 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			currentY += 4.5 //62
 			pdf.SetFont("Roboto-Regular", "", 8)
 			pdf.SetXY(currentX, currentY)
-			pdf.Cell(0, 4, segment.DepartureAirport)
+			flightThereGeo = strings.ToUpper(fmt.Sprintf("%s, %s", segment.DepartureCityName, segment.DepartureCountryName))
+			pdf.Cell(0, 4, flightThereGeo)
 
 			// Finish airport city and country
 			currentX = 110
 			pdf.SetXY(currentX, currentY)
-			pdf.Cell(0, 4, segment.ArrivalAirport)
+			flightBackGeo = strings.ToUpper(fmt.Sprintf("%s, %s", segment.ArrivalCityName, segment.ArrivalCountryName))
+			pdf.Cell(0, 4, flightBackGeo)
 
 			//Departing At
 			currentX = 64
@@ -342,7 +343,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 4, distance)
 
-			// Distance data
+			// Distance ticket
 			currentX = 160
 			currentY += 4 // 70
 			pdf.SetXY(currentX, currentY)
@@ -354,7 +355,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 4, stops)
 
-			//Space data
+			//Space ticket
 			currentX = 160
 			currentY += 5 // 79
 			pdf.SetXY(currentX, currentY)
@@ -366,7 +367,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 4, meals)
 
-			// Meals data
+			// Meals ticket
 			currentX = 160
 			currentY += 4 //87
 			pdf.SetXY(currentX, currentY)
@@ -389,7 +390,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 5, passengerName)
 
-			// Passenger data
+			// Passenger ticket
 			currentX = 10
 			currentY += 4 // 104
 			pdf.SetXY(currentX, currentY)
@@ -401,7 +402,7 @@ func GeneratePDF(data models.RequestDataNew) ([]byte, error) {
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 5, seats)
 
-			// Seats data
+			// Seats ticket
 			currentX = 100
 			currentY += 4 // 104
 			pdf.SetXY(currentX, currentY)

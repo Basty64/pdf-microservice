@@ -8,9 +8,9 @@ import (
 )
 
 func SaveLocalPDF(filename string, pdfBytes []byte) error {
-	// Create a "local-pdfs" directory if it doesn't exist.
+
 	if _, err := os.Stat("local-pdfs"); os.IsNotExist(err) {
-		err := os.Mkdir("local-pdfs", os.ModeDir|0755)
+		err = os.Mkdir("local-pdfs", os.ModeDir|0755)
 		if err != nil {
 			return fmt.Errorf("failed to create directory 'local-pdfs': %w", err)
 		}

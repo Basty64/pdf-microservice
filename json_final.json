@@ -1,0 +1,130 @@
+[
+  {
+    "ticket": {
+      "id": 81,
+      "price": "471.38",
+      "currency": "EUR",
+      "itineraries": [
+        {
+          "duration": "32:25",
+          "segments": [
+            {
+              "departure_time": "2025-02-22T05:10:00",
+              "arrival_time": "2025-02-22T09:25:00",
+              "departure_airport": "VKO",
+              "arrival_airport": "ESB",
+              "carrier": "VF",
+              "carrier_name": "AJet",
+              "carrier_logo": "https://pics.avs.io/500/200/VF.png",
+              "duration": "4:15",
+              "departure_city_name": "Moscow",
+              "departure_country_name": "Russia",
+              "arrival_city_name": "Ankara",
+              "arrival_country_name": "Turkey"
+            },
+            {
+              "departure_time": "2025-02-22T11:30:00",
+              "arrival_time": "2025-02-22T12:30:00",
+              "departure_airport": "ESB",
+              "arrival_airport": "SAW",
+              "carrier": "VF",
+              "carrier_name": "AJet",
+              "carrier_logo": "https://pics.avs.io/500/200/VF.png",
+              "duration": "1:0",
+              "departure_city_name": "Ankara",
+              "departure_country_name": "Turkey",
+              "arrival_city_name": "Istanbul",
+              "arrival_country_name": "Turkey"
+            },
+            {
+              "departure_time": "2025-02-23T10:10:00",
+              "arrival_time": "2025-02-23T11:35:00",
+              "departure_airport": "SAW",
+              "arrival_airport": "HAM",
+              "carrier": "VF",
+              "carrier_name": "AJet",
+              "carrier_logo": "https://pics.avs.io/500/200/VF.png",
+              "duration": "3:25",
+              "departure_city_name": "Istanbul",
+              "departure_country_name": "Turkey",
+              "arrival_city_name": "Hamburg",
+              "arrival_country_name": "Germany"
+            }
+          ],
+          "stops": 2
+        },
+        {
+          "duration": "37:55",
+          "segments": [
+            {
+              "departure_time": "2025-03-22T12:20:00",
+              "arrival_time": "2025-03-22T17:25:00",
+              "departure_airport": "HAM",
+              "arrival_airport": "SAW",
+              "carrier": "VF",
+              "carrier_name": "AJet",
+              "carrier_logo": "https://pics.avs.io/500/200/VF.png",
+              "duration": "3:5",
+              "departure_city_name": "Hamburg",
+              "departure_country_name": "Germany",
+              "arrival_city_name": "Istanbul",
+              "arrival_country_name": "Turkey"
+            },
+            {
+              "departure_time": "2025-03-23T10:00:00",
+              "arrival_time": "2025-03-23T11:00:00",
+              "departure_airport": "SAW",
+              "arrival_airport": "ESB",
+              "carrier": "VF",
+              "carrier_name": "AJet",
+              "carrier_logo": "https://pics.avs.io/500/200/VF.png",
+              "duration": "1:0",
+              "departure_city_name": "Istanbul",
+              "departure_country_name": "Turkey",
+              "arrival_city_name": "Ankara",
+              "arrival_country_name": "Turkey"
+            },
+            {
+              "departure_time": "2025-03-23T23:55:00",
+              "arrival_time": "2025-03-24T04:15:00",
+              "departure_airport": "ESB",
+              "arrival_airport": "VKO",
+              "carrier": "VF",
+              "carrier_name": "AJet",
+              "carrier_logo": "https://pics.avs.io/500/200/VF.png",
+              "duration": "4:20",
+              "departure_city_name": "Ankara",
+              "departure_country_name": "Turkey",
+              "arrival_city_name": "Moscow",
+              "arrival_country_name": "Russia"
+            }
+          ],
+          "stops": 2
+        }
+      ],
+      "airline": "VF",
+      "flight_class": "ECONOMY",
+      "start_city_name": "Moscow",
+      "start_country_name": "Russia",
+      "final_city_name": "Hamburg",
+      "final_country_name": "Germany",
+      "qr_url": "https://s3.timeweb.cloud/6d6c0abb-d61028e9-4bc0-48ce-a7b4-7085d940e076/tickets/81.pdf"
+    },
+    "user": {
+      "email": "USER@EXAMPLE.COM",
+      "phone_number": "+79600301113",
+      "adults": [
+        {
+          "first_name": "Evgeniy",
+          "last_name": "Prigozhin",
+          "birth_date": "1977-01-28",
+          "gender": "M",
+          "seria_passport": 12,
+          "number_passport": 12342121,
+          "nationality": "STRING",
+          "validity_period": "2027-01-28"
+        }
+      ]
+    }
+  }
+]
