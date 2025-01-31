@@ -44,7 +44,7 @@ func GeneratePDFHandler(cfg *options.Config, s3Client *minio.Client) http.Handle
 					log.Printf("Failed to save PDF locally: %v", err)
 					http.Error(w, "Failed to save PDF locally", http.StatusBadRequest)
 				}
-				pdfKey = fmt.Sprint(adult.FirstName + "-local-pdf")
+				pdfKey = fmt.Sprint(adult.FirstName + "-" + adult.LastName + "-local-pdf")
 				response[pdfKey] = file.Filename
 				log.Printf("Successfully generated and saved PDF locally: %s", file.Filename)
 			}
