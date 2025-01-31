@@ -15,6 +15,7 @@ type Api struct {
 	Port      string `mapstructure:"port"`
 	Debug     bool   `mapstructure:"debug"`
 	LocalSave bool   `mapstructure:"local_save"`
+	DirName   string `mapstructure:"dir_name"`
 }
 
 type S3 struct {

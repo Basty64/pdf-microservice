@@ -372,17 +372,16 @@ func GeneratePDF(ticket models.Ticket, client models.Adult, url string) ([]byte,
 			currentY += 4 //87
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 4, notAvailable)
-
 			//---------------------------------------------
 
 			// BOTTOM TABLE
 			// Grey background
 			pdf.SetFillColor(int(greyColor.R), int(greyColor.G), int(greyColor.B))
-			pdf.Rect(10, currentY+12.5, 190, 4.5, "F")
+			pdf.Rect(10, currentY+12.5, 190, 4, "F")
 
 			// Dotted lines
-			drawDashedRectLine(pdf, 99, currentY+13, 99, currentY+21, rectSize, spaceLen)
-			drawDashedRectLine(pdf, 154, currentY+13, 154, currentY+21, rectSize, spaceLen)
+			drawDashedRectLine(pdf, 99, currentY+13, 99, currentY+20, rectSize, spaceLen)
+			drawDashedRectLine(pdf, 154, currentY+13, 154, currentY+20, rectSize, spaceLen)
 
 			// Passenger name
 			currentX = 10
@@ -425,11 +424,17 @@ func GeneratePDF(ticket models.Ticket, client models.Adult, url string) ([]byte,
 	}
 	//----------------------------------
 
-	pdf.Line(10, currentY+2, 190, currentY+2)
+	pdf.Line(10, currentY+1, 200, currentY+1)
 
 	// Terms and conditions
 	currentX = 10.0
 	currentY += 5.0
+
+	if currentY+110 > 297 {
+		pdf.AddPage()
+		currentX = 10
+		currentY = 7
+	}
 
 	// Выводим заголовок жирным шрифтом
 	pdf.SetXY(currentX, currentY)

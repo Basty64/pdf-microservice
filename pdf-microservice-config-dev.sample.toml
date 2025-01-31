@@ -2,6 +2,7 @@
 host = "localhost"
 port = "8080"
 local_save = false
+dir_name = "local-pdfs"
 
 [s3]
 access_key_id = "YOUR_ACCESS_KEY"
