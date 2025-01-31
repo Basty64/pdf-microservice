@@ -419,7 +419,7 @@ func GeneratePDF(ticket models.Ticket, client models.Adult, url string) ([]byte,
 			pdf.SetXY(currentX, currentY)
 			pdf.Cell(0, 5, confirmed)
 
-			currentY += 8 // 112
+			currentY += 12 // 116
 		}
 	}
 	//----------------------------------

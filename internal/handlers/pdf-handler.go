@@ -16,8 +16,10 @@ import (
 
 func GeneratePDFHandler(cfg *options.Config, s3Client *minio.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		var err error
 		var requestData []models.RequestData
+
 		if err = json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 			http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 			return
@@ -58,7 +60,6 @@ func GeneratePDFHandler(cfg *options.Config, s3Client *minio.Client) http.Handle
 					mu.Lock()
 					response[pdfKey] = file.Filename
 					mu.Unlock()
-					log.Printf("Successfully generated and saved PDF locally: %s", file.Filename)
 				}
 
 				err = s3_storage.UploadFile(cfg, s3Client, file.Filename, file.Bytes)
@@ -83,6 +84,6 @@ func GeneratePDFHandler(cfg *options.Config, s3Client *minio.Client) http.Handle
 			return
 		}
 
-		log.Printf("Successfully generated and uploaded PDFs to %s: %v", cfg.S3.BucketName, response)
+		log.Printf("Successfully generated and uploaded PDFs")
 	}
 }

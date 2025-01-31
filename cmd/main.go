@@ -33,6 +33,8 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
+	r.Get("/ping", handlers.PingHandler)
+
 	r.Method(http.MethodPost, "/generate", handlers.GeneratePDFHandler(cfg, s3Client))
 
 	log.Println("Server starting on port " + cfg.Api.Port)
