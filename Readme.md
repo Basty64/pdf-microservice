@@ -6,7 +6,7 @@
 При первом запуске:
 
 ```shell
-git clone github.com/Basty64/pdf-microservice
+git clone https://github.com/Basty64/pdf-microservice
 ```
 >Далее
 
@@ -14,7 +14,7 @@ git clone github.com/Basty64/pdf-microservice
 cd ./pdf-microservice
 ```
 ```shell
-cp ./.pdf-microservice-config-dev.sample.toml ./.pdf-microservice-config-dev.toml
+cp ./pdf-microservice-config-dev.sample.toml ./pdf-microservice-config-dev.toml
 ```
 >Затем
 
